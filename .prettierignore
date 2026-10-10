@@ -1,0 +1,7 @@
+node_modules
+.next
+.runtime
+test-results
+package-lock.json
+docs/InstaPlanner - PRD.md
+docs/InstaPlanner - Plan implementacji.md
