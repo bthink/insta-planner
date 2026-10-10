@@ -110,12 +110,16 @@ p {
   gap: 8px;
 }
 .account-select select {
+  display: flex;
+  align-items: center;
+  margin: 0;
   border: 0;
   background: transparent;
   padding: 5px;
   font-weight: 550;
   color: var(--ink);
   max-width: 250px;
+  line-height: 1;
 }
 .account-dot {
   display: inline-block;
@@ -125,10 +129,13 @@ p {
   flex-shrink: 0;
 }
 .local-pill {
+  display: flex;
+  align-items: center;
   font-size: 10px;
   color: var(--muted);
   padding-left: 12px;
   border-left: 1px solid var(--line);
+  line-height: 1;
 }
 .icon-button {
   display: inline-flex;
