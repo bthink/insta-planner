@@ -20,6 +20,7 @@
 - [x] 5. Automatyczne paczki, wersje, odzyskiwanie, ponowienie, historia na żądanie.
 - [x] 6. Podpisy OpenAI, wskazane podglądy, propozycja do akceptacji, testy mock bez płatnych żądań.
 - [x] 7. Skróty i kopie zapasowe: zweryfikowane na tym Macu. Aplikacja gotowa do odbioru na własnych materiałach użytkownika.
+- [x] 8. Lokalny MCP stdio: konta, import partii, podglądy dla modelu, posty, harmonogram, paczki, ręczne potwierdzenie i kopie zapasowe. Konfiguracja klientów: [MCP](MCP.md). Jakość doboru zdjęć i dostęp do załączników wymagają odbioru w docelowym kliencie.
 
 ## Weryfikacja
 
@@ -28,6 +29,7 @@
 - Test przeglądarkowy przechodzi: tworzenie kont, wieloplikowy import JPEG/PNG/MP4/MOV, kolejność karuzeli, przeciąganie na kalendarz, edycja i zmiana daty, dokładne media i TXT, Finder, ręczna publikacja, izolacja kont i oryginalny eksport rolki. Brak błędów JavaScript.
 - Skrót produkcyjny sprawdzony: start, ponowne wywołanie bez drugiego serwera i zatrzymanie.
 - Spójna kopia zapasowa i odtworzenie do nowej ścieżki zweryfikowane testem.
+- Rozszerzony zestaw ma 15 przechodzących testów, w tym 4 testy MCP: protokół i rzeczywiste handlery API, ograniczenia lokalnego importu, błędy mostka HTTP oraz start stdio poza katalogiem projektu. Typecheck i build produkcyjny przechodzą. Bez odbioru jakości selekcji zdjęć w docelowym czacie.
 
 ## Ograniczenia
 

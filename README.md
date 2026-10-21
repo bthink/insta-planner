@@ -46,6 +46,12 @@ Jedna publikacja na konto i dzień, także w historii. Zaległość jest wylicza
 
 Post jest utrwalany przed operacją na plikach. Błąd paczki nie usuwa danych ani ostatniej dobrej paczki. Interfejs pokazuje błąd i przycisk ponowienia. Restart naprawia przerwane eksporty i czyszczenie. Usuwane są wyłącznie foldery z manifestem danego posta. Eksport nie synchronizuje ręcznych zmian z paczki do aplikacji.
 
+## Obsługa przez czat i MCP
+
+Lokalny serwer MCP pozwala modelowi w podłączonym kliencie oglądać zdjęcia, wybierać zestawy, układać karuzele, pisać podpisy, planować daty i obsługiwać konta, paczki oraz kopie zapasowe. Nie wymaga dodatkowego klucza AI. Instalacja, konfiguracja Codex/Claude, import serii i przykładowe polecenia: [instrukcja MCP](docs/MCP.md).
+
+Załączniki czatu muszą być udostępnione przez klienta jako dane lub pliki w dozwolonym folderze na tym Macu. Samo MCP nie uzyskuje automatycznie dostępu do załączników. Publikacja i jej potwierdzenie pozostają ręczne.
+
 ## Opcjonalne AI
 
 Dodaj własny `OPENAI_API_KEY` do `.env.local` i uruchom ponownie. Klucz pozostaje na serwerze, poza bazą i kopiami zapasowymi. Model można zmienić przez `OPENAI_MODEL`, domyślnie `gpt-4.1-mini`.
