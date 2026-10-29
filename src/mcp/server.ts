@@ -271,6 +271,15 @@ export function createMcpServer(
       api.json(`media/${segment(id)}/copy`, "POST", { accountId }),
   );
   tool(
+    "clear_media_pool",
+    "Wyczyść media pool wskazanego konta z nieużywanych mediów. Trwale usuwa nieużywane kopie i miniatury; media przypisane do postów pozostawia w poolu. Zwraca deleted i retained. Wymaga potwierdzenia użytkownika.",
+    { accountId: id, userConfirmed: z.literal(true) },
+    false,
+    ({ accountId }) =>
+      api.json(`media?accountId=${segment(accountId)}`, "DELETE"),
+    true,
+  );
+  tool(
     "delete_media",
     "Usuń medium. Powiązane z postami media są chronione.",
     { id },

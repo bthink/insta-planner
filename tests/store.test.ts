@@ -404,3 +404,60 @@ test("symlinks, escaping paths, fake uploads and cross-origin requests are rejec
     ),
   );
 });
+
+test("clearing a pool removes unused files, preserves posts and isolates accounts", async () => {
+  const { root, store, first, second, a, b, draft, imageA } = await setup();
+  const other = await store.lock(() => store.copyMedia(a.id, second.id));
+  const post = await store.lock(() =>
+    store.savePost({ ...draft, type: "photo", mediaIds: [a.id] }),
+  );
+  await assert.rejects(store.lock(() => store.clearMediaPool("missing")));
+  const result = await store.lock(() => store.clearMediaPool(first.id));
+  assert.deepEqual(result, { deleted: 1, retained: 1 });
+  assert.deepEqual(
+    store.media(first.id).map((m) => m.id),
+    [a.id],
+  );
+  assert.equal(store.media(second.id)[0].id, other.id);
+  assert.equal(fs.existsSync(path.join(root, b.storedRelativePath)), false);
+  assert.equal(fs.existsSync(path.join(root, b.thumbnailRelativePath!)), false);
+  assert.deepEqual(
+    fs.readFileSync(path.join(root, a.storedRelativePath)),
+    imageA,
+  );
+  assert.ok(fs.existsSync(path.join(root, a.thumbnailRelativePath!)));
+  assert.deepEqual(
+    store.post(post.id).media.map((m) => m.id),
+    [a.id],
+  );
+  assert.deepEqual(
+    fs.readFileSync(path.join(bundle(root, post), "01.jpeg")),
+    imageA,
+  );
+  assert.deepEqual(await store.lock(() => store.clearMediaPool(first.id)), {
+    deleted: 0,
+    retained: 1,
+  });
+  const edited = await store.lock(() =>
+    store.savePost(
+      {
+        ...draft,
+        type: "photo",
+        mediaIds: [a.id],
+        revision: post.revision,
+        caption: "After clearing",
+      },
+      post.id,
+    ),
+  );
+  assert.equal(edited.media[0].id, a.id);
+  store.db.close();
+  const restarted = new Store(root);
+  stores.push(restarted);
+  await restarted.ready;
+  assert.deepEqual(
+    restarted.media(first.id).map((m) => m.id),
+    [a.id],
+  );
+  assert.equal(restarted.post(post.id).media[0].id, a.id);
+});

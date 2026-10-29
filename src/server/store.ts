@@ -289,6 +289,23 @@ export class Store {
       fs.createReadStream(safePath(this.root, source.storedRelativePath)),
     );
   }
+  clearMediaPool(accountId: string): { deleted: number; retained: number } {
+    const media = this.media(accountId);
+    let deleted = 0;
+    let retained = 0;
+    for (const medium of media) {
+      const linked = this.db
+        .prepare("SELECT postId FROM post_media WHERE mediaId = ? LIMIT 1")
+        .get(medium.id);
+      if (linked) {
+        retained++;
+      } else {
+        this.deleteMedia(medium.id);
+        deleted++;
+      }
+    }
+    return { deleted, retained };
+  }
   deleteMedia(id: string): void {
     const medium = this.medium(id);
     if (

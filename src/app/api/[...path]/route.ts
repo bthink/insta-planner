@@ -46,6 +46,12 @@ async function handle(
       }
     }
     if (resource === "media") {
+      if (method === "DELETE" && !id)
+        return json(
+          await store.lock(() =>
+            store.clearMediaPool(url.searchParams.get("accountId") || ""),
+          ),
+        );
       if (method === "GET" && !id)
         return json(store.media(url.searchParams.get("accountId") || ""));
       if (method === "GET" && id) {
