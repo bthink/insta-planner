@@ -15,6 +15,7 @@ import {
 import type { Account, Media, Post, PostInput } from "@/lib/types";
 import { missingParts } from "@/lib/types";
 import MediaThumb from "./MediaThumb";
+import PhotoLightbox from "./PhotoLightbox";
 import { api, mutation } from "./api";
 
 export type Draft = PostInput & {
@@ -45,6 +46,7 @@ export default function PostEditor({
     [picker, setPicker] = useState(false),
     [proposal, setProposal] = useState("");
   const [hints, setHints] = useState("");
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const [aiMedia, setAiMedia] = useState<string[]>(draft.mediaIds.slice(0, 3));
   const alive = useRef(true),
     abort = useRef<AbortController | null>(null);
@@ -65,7 +67,7 @@ export default function PostEditor({
   };
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
+      if (event.key === "Escape" && !previewId) close();
     };
     document.addEventListener("keydown", key);
     return () => document.removeEventListener("keydown", key);
@@ -219,7 +221,18 @@ export default function PostEditor({
               <div className="editor-media-grid">
                 {media.map((medium, index) => (
                   <div className="editor-media-item" key={medium.id}>
-                    <MediaThumb medium={medium} />
+                    {medium.mediaType === "image" ? (
+                      <button
+                        type="button"
+                        className="photo-preview-trigger"
+                        aria-label={`Powiększ ${medium.originalName}`}
+                        onClick={() => setPreviewId(medium.id)}
+                      >
+                        <MediaThumb medium={medium} />
+                      </button>
+                    ) : (
+                      <MediaThumb medium={medium} />
+                    )}
                     <span className="position">{index + 1}</span>
                     <div className="reorder-controls">
                       <button
@@ -618,6 +631,14 @@ export default function PostEditor({
           </footer>
         </form>
       </section>
+      {previewId && (
+        <PhotoLightbox
+          photos={media.filter((medium) => medium.mediaType === "image")}
+          selectedId={previewId}
+          onSelect={setPreviewId}
+          onClose={() => setPreviewId(null)}
+        />
+      )}
     </div>
   );
 }

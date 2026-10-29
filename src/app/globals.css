@@ -871,7 +871,80 @@ h1 {
 .editor-media-item .media-thumb {
   border-radius: 6px;
 }
+.photo-preview-trigger {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  cursor: zoom-in;
+}
+.photo-preview-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.photo-lightbox {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 64px 60px;
+  border: 0;
+  background: transparent;
+  color: white;
+}
+.photo-lightbox[open] {
+  display: grid;
+  place-items: center;
+}
+.photo-lightbox::backdrop {
+  background: rgb(0 0 0 / 88%);
+}
+.photo-lightbox figure {
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+.photo-lightbox img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100dvh - 170px);
+  object-fit: contain;
+  margin: auto;
+}
+.photo-lightbox figcaption {
+  text-align: center;
+  overflow-wrap: anywhere;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.photo-lightbox button {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #333;
+  color: white;
+}
+.lightbox-close {
+  top: 12px;
+  right: 12px;
+}
+.lightbox-previous {
+  top: calc(50% - 22px);
+  left: 8px;
+}
+.lightbox-next {
+  top: calc(50% - 22px);
+  right: 8px;
+}
 .position {
+  pointer-events: none;
   position: absolute;
   top: 6px;
   left: 6px;
