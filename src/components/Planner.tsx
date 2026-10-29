@@ -54,6 +54,7 @@ export default function Planner() {
   } | null>(null);
   const [loading, setLoading] = useState(true),
     [fatal, setFatal] = useState("");
+  const [clearingPool, setClearingPool] = useState(false);
   const [uploads, setUploads] = useState<UploadResult[]>([]),
     [dragging, setDragging] = useState(false);
   const activeRef = useRef(active),
@@ -569,6 +570,53 @@ export default function Planner() {
                       Twoje media <span>{media.length}</span>
                     </h3>
                     <p>Gotowe zdjęcia i filmy dla tego konta.</p>
+                    <button
+                      className="button secondary"
+                      disabled={
+                        !media.length ||
+                        loading ||
+                        clearingPool ||
+                        uploads.some(
+                          (u) =>
+                            u.state === "pending" || u.state === "uploading",
+                        )
+                      }
+                      onClick={async () => {
+                        if (
+                          !account ||
+                          !confirm(
+                            `Wyczyścić cały media pool konta „${account.name}” (${media.length} mediów)? Nieużywane kopie i miniatury zostaną trwale usunięte. Media przypisane do postów pozostaną w poolu.`,
+                          )
+                        )
+                          return;
+                        const accountId = account.id;
+                        setClearingPool(true);
+                        try {
+                          const result = await api<{
+                            deleted: number;
+                            retained: number;
+                          }>(
+                            `media?accountId=${encodeURIComponent(accountId)}`,
+                            { method: "DELETE" },
+                          );
+                          if (activeRef.current === accountId) setSelected([]);
+                          await refresh();
+                          notice(
+                            `Czyszczenie konta „${account.name}” zakończone. Usunięto: ${result.deleted}, pominięto używane: ${result.retained}.`,
+                          );
+                        } catch (error) {
+                          await refresh().catch(() => {});
+                          notice((error as Error).message, true);
+                        } finally {
+                          setClearingPool(false);
+                        }
+                      }}
+                    >
+                      <Trash2 size={16} />{" "}
+                      {clearingPool
+                        ? "Czyszczenie..."
+                        : "Wyczyść cały media pool"}
+                    </button>
                   </div>
                   <div
                     className={`dropzone ${dragging ? "dragging" : ""}`}

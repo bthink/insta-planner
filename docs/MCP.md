@@ -71,7 +71,7 @@ Model powinien najpierw pobrać konta, kontekst i dotychczasowe posty, następni
 | Zakres | Narzędzia |
 | --- | --- |
 | Konfiguracja i konta | `get_settings`, `list_accounts`, `save_account`, `delete_account` |
-| Media | `list_import_files`, `import_media`, `list_media`, `view_media`, `copy_media`, `delete_media` |
+| Media | `list_import_files`, `import_media`, `list_media`, `view_media`, `copy_media`, `delete_media`, `clear_media_pool` |
 | Posty i kalendarz | `list_posts`, `get_post`, `save_post`, `schedule_post`, `delete_post` |
 | Ręczna publikacja | `record_publication` |
 | Paczki | `retry_export`, `export_post`, `remove_export`, `open_post_folder` |
@@ -88,3 +88,5 @@ MCP używa tego samego lokalnego HTTP API co interfejs. Nie otwiera drugiej bazy
 `npm test` obejmuje negocjację i wywołania przez oficjalny klient MCP, rzeczywiste handlery API na osobnych danych testowych, częściowy import partii, podglądy, izolację kont, kolizje dat i rewizji, wymaganie flagi potwierdzenia, kopię zapasową i identyczne bajty eksportu. Osobny test uruchamia proces stdio z katalogu poza projektem. Nie wykonuje płatnych wywołań AI ani nie zmienia danych użytkownika. Testy protokołu nie zastępują odbioru jakości selekcji zdjęć w rozmowie z modelem.
 
 Źródło implementacji protokołu: [oficjalny TypeScript SDK MCP](https://ts.sdk.modelcontextprotocol.io/server).
+
+`clear_media_pool` wymaga `accountId` i `userConfirmed: true`. Czyści pool konta z nieużywanych kopii i miniatur. Media przypisane do postów pozostają w poolu. Zwraca liczbę usuniętych (`deleted`) i pominiętych używanych (`retained`) mediów. Operacja dotyczy także mediów poza bieżącą stroną wyników.

@@ -202,6 +202,37 @@ test("MCP protocol drives real API, media previews, calendar, conflict protectio
     );
     const copy = await value("copy_media", { id: a, accountId: other.id });
     assert.equal(copy.accountId, other.id);
+    assert.ok(
+      (await call("clear_media_pool", { accountId: account.id })).isError,
+    );
+    assert.ok(
+      (
+        await call("clear_media_pool", {
+          accountId: "missing",
+          userConfirmed: true,
+        })
+      ).isError,
+    );
+    assert.equal(
+      tools.tools.find((t) => t.name === "clear_media_pool")?.annotations
+        ?.destructiveHint,
+      true,
+    );
+    const cleared = await value("clear_media_pool", {
+      accountId: account.id,
+      userConfirmed: true,
+    });
+    assert.equal(cleared.retained, 2);
+    assert.equal((await getStore()).media(account.id).length, 2);
+    assert.equal((await getStore()).media(other.id).length, 1);
+    assert.equal((await value("get_post", { id: post.id })).media.length, 2);
+    assert.deepEqual(
+      await value("clear_media_pool", {
+        accountId: account.id,
+        userConfirmed: true,
+      }),
+      { deleted: 0, retained: 2 },
+    );
     const backup = await value("create_backup");
     assert.ok(fs.existsSync(backup.path));
     await value("delete_post", { id: post.id });
