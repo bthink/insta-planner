@@ -1365,3 +1365,12 @@ input[type="checkbox"] {
     margin: 2px 3px 6px;
   }
 }
+
+.library-panel .media-select {
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.library-panel .media-select:active {
+  cursor: grabbing;
+}
