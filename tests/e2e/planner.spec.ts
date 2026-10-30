@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 import { execFileSync } from "node:child_process";
-import type { Post } from "../../src/lib/types";
+import { todayWarsaw, type Post } from "../../src/lib/types";
 
 test("account -> import -> carousel -> calendar -> edit -> bundle -> manual publication", async ({
   page,
@@ -179,4 +179,64 @@ test("account -> import -> carousel -> calendar -> edit -> bundle -> manual publ
   expect(movie.mimeType).toBe("video/quicktime");
   expect(movie.thumbnailRelativePath).toBeTruthy();
   expect(errors).toEqual([]);
+});
+
+test("media drop saves a draft, persists after reload and rejects an occupied day", async ({
+  page,
+  request,
+  baseURL,
+}) => {
+  const accountResponse = await request.post("/api/accounts", {
+    headers: { Origin: baseURL! },
+    data: {
+      name: "Plan ze zdjęć",
+      handle: "",
+      accent: "#81977b",
+      aiContext: "",
+    },
+  });
+  expect(accountResponse.ok()).toBeTruthy();
+  const account = await accountResponse.json();
+  const bytes = await sharp({
+    create: { width: 200, height: 200, channels: 3, background: "#81977b" },
+  })
+    .jpeg()
+    .toBuffer();
+  const upload = await request.post(
+    `/api/media?accountId=${account.id}&filename=plan.jpg`,
+    {
+      data: bytes,
+      headers: { "Content-Type": "application/octet-stream", Origin: baseURL! },
+    },
+  );
+  expect(upload.ok()).toBeTruthy();
+  const medium = await upload.json();
+  await page.goto("/");
+  await page.getByLabel("Aktywne konto").selectOption(account.id);
+  await page.getByRole("button", { name: "Media", exact: true }).click();
+  const source = page.getByRole("button", { name: "Wybierz plan.jpg" });
+  const day = page.locator(`.fc-daygrid-day[data-date="${todayWarsaw()}"]`);
+  await source.dragTo(day);
+  await expect(day.locator(".calendar-post")).toContainText("plan.jpg");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  const readPosts = async (): Promise<Post[]> =>
+    (await request.get(`/api/posts?accountId=${account.id}`)).json();
+  const posts = await readPosts();
+  expect(posts).toHaveLength(1);
+  expect(posts[0]).toMatchObject({
+    scheduledDate: todayWarsaw(),
+    readiness: "draft",
+    caption: "",
+    type: "photo",
+    publicationConfirmedAt: null,
+  });
+  expect(posts[0].media.map((item) => item.id)).toEqual([medium.id]);
+  await source.dragTo(day);
+  await expect(page.getByRole("alert")).toBeVisible();
+  expect(await readPosts()).toHaveLength(1);
+  await page.reload();
+  await expect(day.locator(".calendar-post")).toContainText("plan.jpg");
+  await day.locator(".fc-event").click();
+  await expect(page.getByLabel("Tytuł roboczy")).toHaveValue("plan.jpg");
+  await expect(page.getByLabel("Data publikacji")).toHaveValue(todayWarsaw());
 });
