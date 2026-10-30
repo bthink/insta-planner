@@ -142,7 +142,7 @@ export class Store {
         `SELECT m.*,
       (SELECT COUNT(*) FROM post_media pm JOIN posts p ON p.id = pm.postId WHERE pm.mediaId = m.id AND p.deleted = 0 AND p.scheduledDate IS NOT NULL AND p.publicationConfirmedAt IS NULL) planned,
       (SELECT COUNT(*) FROM post_media pm JOIN posts p ON p.id = pm.postId WHERE pm.mediaId = m.id AND p.deleted = 0 AND p.publicationConfirmedAt IS NOT NULL) published
-      FROM media m WHERE accountId = ? ORDER BY createdAt DESC`,
+      FROM media m WHERE accountId = ? AND hiddenFromPool = 0 ORDER BY createdAt DESC`,
       )
       .all(accountId) as Media[];
   }
@@ -306,8 +306,37 @@ export class Store {
     }
     return { deleted, retained };
   }
+  removePublishedFromPool(accountId: string): { removed: number } {
+    this.account(accountId);
+    const result = this.db
+      .prepare(
+        `
+      UPDATE media SET hiddenFromPool = 1
+      WHERE accountId = ? AND hiddenFromPool = 0 AND EXISTS (
+        SELECT 1 FROM post_media pm JOIN posts p ON p.id = pm.postId
+        WHERE pm.mediaId = media.id AND p.deleted = 0
+          AND p.publicationConfirmedAt IS NOT NULL
+      )
+    `,
+      )
+      .run(accountId);
+    return { removed: result.changes };
+  }
   deleteMedia(id: string): void {
     const medium = this.medium(id);
+    if (
+      this.db
+        .prepare(
+          `SELECT 1 FROM post_media pm JOIN posts p ON p.id = pm.postId
+      WHERE pm.mediaId = ? AND p.deleted = 0 AND p.publicationConfirmedAt IS NOT NULL`,
+        )
+        .get(id)
+    ) {
+      this.db
+        .prepare("UPDATE media SET hiddenFromPool = 1 WHERE id = ?")
+        .run(id);
+      return;
+    }
     if (
       this.db
         .prepare("SELECT postId FROM post_media WHERE mediaId = ? LIMIT 1")

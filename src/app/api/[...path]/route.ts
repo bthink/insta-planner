@@ -49,7 +49,11 @@ async function handle(
       if (method === "DELETE" && !id)
         return json(
           await store.lock(() =>
-            store.clearMediaPool(url.searchParams.get("accountId") || ""),
+            url.searchParams.get("publishedOnly") === "true"
+              ? store.removePublishedFromPool(
+                  url.searchParams.get("accountId") || "",
+                )
+              : store.clearMediaPool(url.searchParams.get("accountId") || ""),
           ),
         );
       if (method === "GET" && !id)
