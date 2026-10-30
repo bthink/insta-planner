@@ -1366,6 +1366,11 @@ input[type="checkbox"] {
   }
 }
 
+.library-item.is-used .media-thumb {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
 .library-panel .media-select {
   cursor: grab;
   touch-action: pan-y;

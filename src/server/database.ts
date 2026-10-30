@@ -7,7 +7,7 @@ export function openDatabase(root: string): Database.Database {
   db.pragma("foreign_keys = ON");
   db.pragma("busy_timeout = 5000");
   const version = db.pragma("user_version", { simple: true }) as number;
-  if (version > 2)
+  if (version > 3)
     throw new Error("Baza pochodzi z nowszej wersji InstaPlannera.");
   if (version < 1)
     db.transaction(() => {
@@ -48,6 +48,12 @@ export function openDatabase(root: string): Database.Database {
     db.transaction(() => {
       db.exec(
         "ALTER TABLE accounts ADD COLUMN handle TEXT NOT NULL DEFAULT ''; PRAGMA user_version = 2;",
+      );
+    })();
+  if (version < 3)
+    db.transaction(() => {
+      db.exec(
+        "ALTER TABLE media ADD COLUMN hiddenFromPool INTEGER NOT NULL DEFAULT 0; PRAGMA user_version = 3;",
       );
     })();
   return db;

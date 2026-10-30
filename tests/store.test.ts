@@ -461,3 +461,62 @@ test("clearing a pool removes unused files, preserves posts and isolates account
   );
   assert.equal(restarted.post(post.id).media[0].id, a.id);
 });
+
+test("published pool cleanup preserves posts, files, exports and other accounts", async () => {
+  const { root, store, first, second, a, b, draft, imageA } = await setup();
+  const other = await store.copyMedia(a.id, second.id);
+  const post = await store.savePost({
+    ...draft,
+    type: "photo",
+    mediaIds: [a.id],
+  });
+  assert.equal(store.media(first.id).find((m) => m.id === a.id)!.planned, 1);
+  assert.deepEqual(store.removePublishedFromPool(first.id), { removed: 0 });
+  const published = await store.publish(post.id, true, post.revision);
+  const exported = await store.manualExport(published.id);
+  const upcoming = await store.savePost({
+    ...draft,
+    scheduledDate: "2026-11-02",
+  });
+  assert.deepEqual(store.removePublishedFromPool(first.id), { removed: 1 });
+  assert.deepEqual(
+    store.media(first.id).map((m) => m.id),
+    [b.id],
+  );
+  assert.equal(store.media(second.id)[0].id, other.id);
+  assert.equal(store.post(post.id).media[0].id, a.id);
+  assert.equal(store.post(upcoming.id).media.length, 2);
+  assert.deepEqual(
+    fs.readFileSync(path.join(root, a.storedRelativePath)),
+    imageA,
+  );
+  assert.deepEqual(
+    fs.readFileSync(path.join(bundle(root, exported, "manual"), "01.jpeg")),
+    imageA,
+  );
+  assert.deepEqual(store.removePublishedFromPool(first.id), { removed: 0 });
+  const restarted = new Store(root);
+  stores.push(restarted);
+  await restarted.ready;
+  assert.deepEqual(
+    restarted.media(first.id).map((m) => m.id),
+    [b.id],
+  );
+  assert.equal(restarted.post(post.id).media[0].id, a.id);
+});
+
+test("individual published media removal only hides the pool entry", async () => {
+  const { store, first, a, b, draft } = await setup();
+  const post = await store.savePost(draft);
+  assert.throws(() => store.deleteMedia(a.id), /Medium należy do posta/);
+  await store.publish(post.id, true, post.revision);
+  store.deleteMedia(a.id);
+  assert.deepEqual(
+    store.media(first.id).map((m) => m.id),
+    [b.id],
+  );
+  assert.equal(store.post(post.id).media.length, 2);
+  assert.ok(
+    fs.existsSync(path.join(store.root, store.medium(a.id).storedRelativePath)),
+  );
+});

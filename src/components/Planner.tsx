@@ -664,6 +664,40 @@ export default function Planner() {
                         : "Wyczyść cały media pool"}
                     </button>
                   </div>
+                  <button
+                    className="button secondary"
+                    disabled={
+                      loading || clearingPool || !media.some((m) => m.published)
+                    }
+                    onClick={async () => {
+                      if (
+                        !account ||
+                        !confirm(
+                          `Usunąć opublikowane media z puli konta „${account.name}”? Pliki pozostaną w postach, historii i eksportach.`,
+                        )
+                      )
+                        return;
+                      const accountId = account.id;
+                      setClearingPool(true);
+                      try {
+                        const result = await api<{ removed: number }>(
+                          `media?accountId=${encodeURIComponent(accountId)}&publishedOnly=true`,
+                          { method: "DELETE" },
+                        );
+                        if (activeRef.current === accountId) setSelected([]);
+                        await refresh();
+                        notice(
+                          `Usunięto z puli opublikowane media: ${result.removed}.`,
+                        );
+                      } catch (error) {
+                        notice((error as Error).message, true);
+                      } finally {
+                        setClearingPool(false);
+                      }
+                    }}
+                  >
+                    <Trash2 size={16} /> Usuń opublikowane z puli
+                  </button>
                   <div
                     className={`dropzone ${dragging ? "dragging" : ""}`}
                     onDragOver={(e) => {
@@ -789,7 +823,7 @@ export default function Planner() {
                   <div className="library-grid">
                     {media.map((m) => (
                       <div
-                        className={`library-item ${selected.includes(m.id) ? "selected" : ""}`}
+                        className={`library-item ${m.planned || m.published ? "is-used" : ""} ${selected.includes(m.id) ? "selected" : ""}`}
                         key={m.id}
                       >
                         <button
@@ -816,7 +850,10 @@ export default function Planner() {
                         <p title={m.originalName}>{m.originalName}</p>
                         <div className="media-status">
                           {m.published ? (
-                            <span>Użyte {m.published}×</span>
+                            <span>
+                              Opublikowane {m.published}×
+                              {m.planned ? " · Zaplanowane" : ""}
+                            </span>
                           ) : m.planned ? (
                             <span>Zaplanowane</span>
                           ) : (
@@ -828,7 +865,9 @@ export default function Planner() {
                             onClick={async () => {
                               if (
                                 !confirm(
-                                  "Usunąć zarządzaną kopię medium z biblioteki? Oryginał poza aplikacją pozostaje bez zmian.",
+                                  m.published
+                                    ? "Usunąć medium z puli? Zdjęcie pozostanie w postach, historii i eksportach."
+                                    : "Usunąć zarządzaną kopię medium z biblioteki? Oryginał poza aplikacją pozostaje bez zmian.",
                                 )
                               )
                                 return;
