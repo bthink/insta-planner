@@ -60,6 +60,7 @@ export default function Planner() {
   const activeRef = useRef(active),
     calendar = useRef<FullCalendar>(null),
     ideasPanel = useRef<HTMLDivElement>(null),
+    libraryPanel = useRef<HTMLDivElement>(null),
     fileInput = useRef<HTMLInputElement>(null),
     toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadingSequence = useRef(0),
@@ -142,6 +143,45 @@ export default function Planner() {
     });
     return () => draggable.destroy();
   }, [tab, posts]);
+  useEffect(() => {
+    if (tab !== "library" || !libraryPanel.current) return;
+    const draggable = new Draggable(libraryPanel.current, {
+      itemSelector: ".media-select",
+      eventData: (element) => ({
+        title: element.dataset.title,
+        extendedProps: { mediaId: element.dataset.mediaId },
+      }),
+    });
+    return () => draggable.destroy();
+  }, [tab, media]);
+  const planMedium = async (id: string, date: string) => {
+    const medium = media.find((item) => item.id === id);
+    if (!medium || !active) return;
+    try {
+      const result = await api<Post>(
+        "posts",
+        mutation("POST", {
+          accountId: active,
+          title: medium.originalName.slice(0, 200),
+          type: medium.mediaType === "video" ? "reel" : "photo",
+          caption: "",
+          internalNotes: "",
+          scheduledDate: date,
+          readiness: "draft",
+          mediaIds: [id],
+        }),
+      );
+      await refresh();
+      notice(
+        result.exports.some((item) => item.lastError)
+          ? "Plan zapisany. Nie udało się przygotować paczki."
+          : "Plan zapisany. Kliknij post, aby dopisać szczegóły.",
+        result.exports.some((item) => !!item.lastError),
+      );
+    } catch (error) {
+      notice((error as Error).message, true);
+    }
+  };
   const newDraft = (date: string | null = null, ids: string[] = []) => {
     if (!account) {
       setShowSettings(true);
@@ -441,7 +481,10 @@ export default function Planner() {
                   const id = info.event.id,
                     date = info.event.startStr.slice(0, 10);
                   info.event.remove();
-                  void schedule(id, date);
+                  const mediaId = info.event.extendedProps.mediaId as
+                    string | undefined;
+                  if (mediaId) void planMedium(mediaId, date);
+                  else void schedule(id, date);
                 }}
                 eventContent={(info) => {
                   const post = info.event.extendedProps.post as
@@ -564,12 +607,15 @@ export default function Planner() {
                 </div>
               )}
               {tab === "library" && (
-                <div className="library-panel">
+                <div className="library-panel" ref={libraryPanel}>
                   <div className="panel-heading">
                     <h3>
                       Twoje media <span>{media.length}</span>
                     </h3>
-                    <p>Gotowe zdjęcia i filmy dla tego konta.</p>
+                    <p>
+                      Przeciągnij zdjęcie lub film na dzień, aby zapisać wstępny
+                      plan.
+                    </p>
                     <button
                       className="button secondary"
                       disabled={
@@ -782,6 +828,10 @@ export default function Planner() {
                       >
                         <button
                           className="media-select"
+                          data-media-id={m.id}
+                          data-title={m.originalName}
+                          title="Przeciągnij na dzień w kalendarzu"
+                          onDragStart={(event) => event.preventDefault()}
                           onClick={() =>
                             setSelected(
                               selected.includes(m.id)
